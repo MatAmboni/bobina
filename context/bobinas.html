@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Somador de Peso de Bobinas</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 30px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+    h2 { margin-top: 0; }
+    .field { margin-bottom: 15px; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; }
+    input { width: 100%; padding: 8px; box-sizing: border-box; font-size: 16px; }
+    .btn-group { display: flex; gap: 10px; }
+    button { padding: 8px 12px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; border-radius: 4px; }
+    .btn-add { background-color: #28a745; color: white; flex: 2; padding: 10px; font-size: 15px; }
+    .btn-clear { background-color: #dc3545; color: white; flex: 1; padding: 10px; font-size: 15px; }
+    .btn-edit { background-color: #ffc107; color: #000; }
+    .btn-delete { background-color: #dc3545; color: white; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; }
+    th { background-color: #f4f4f4; }
+    
+    .etiquetas-lista { list-style: none; padding: 0; margin: 0; }
+    .etiquetas-lista li { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      padding: 4px 0; 
+      border-bottom: 1px dashed #eee; 
+    }
+    .etiquetas-lista li:last-child { border-bottom: none; }
+    .actions { display: flex; gap: 5px; }
+  </style>
+</head>
+<body>
+
+  <h2>Somador de Bobinas</h2>
+
+  <div class="field">
+    <label for="bobinaInput">Nome da Bobina:</label>
+    <input list="listaBobinas" id="bobinaInput" placeholder="Digite para buscar a bobina...">
+    <datalist id="listaBobinas"></datalist>
+  </div>
+
+  <div class="field">
+    <label for="pesoInput">Peso da Etiqueta (kg):</label>
+    <input type="number" step="0.001" id="pesoInput" placeholder="Ex: 12.500">
+  </div>
+
+  <div class="btn-group">
+    <button class="btn-add" onclick="adicionarPeso()">Adicionar Peso</button>
+    <button class="btn-clear" onclick="limparTudo()">Limpar Tabela</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nome da Bobina</th>
+        <th>Etiquetas Lançadas</th>
+        <th>Peso Total (kg)</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaResumo">
+    </tbody>
+  </table>
+
+  <script>
+    const catalogo = {
+      "Amboni PARBO T1 1KG": "600039",
+      "Amboni PARBO T1 5KG": "600040",
+      "Amboni BRANCO 1KG": "600042",
+      "Amboni BRANCO 5KG": "600043",
+      "Amboni INTEGRAL 1KG": "600041",
+      "Tio Alemão PARBO T1 1KG": "600044",
+      "Tio Alemão PARBO T1 5KG": "600045",
+      "Tio Alemão PARBO T2 1KG": "600063",
+      "Tio Alemão PARBO T2 5KG": "600070",
+      "Tio Alemão BRANCO T1 1KG": "600093",
+      "Tio Alemão BRANCO T1 5KG": "600092",
+      "Tio Alemão BRANCO T2 1KG": "600115",
+      "Giassi PARBO T1 1KG": "600049",
+      "Giassi PARBO T1 5KG": "600050",
+      "Giassi BRANCO T1 1KG": "600088",
+      "Giassi BRANCO T1 5KG": "600089",
+      "Periquito PARBO T1 1KG": "600046",
+      "Periquito PARBO T1 5KG": "600047",
+      "Bonicão": "600087",
+      "Maravilha PARBO 1KG": "600095",
+      "Maravilha 5KG": "600096",
+      "Du Rocha PARBO 1KG": "600104",
+      "Du Rocha BRANCO 1KG": "600106",
+      "Vitoria PARBO 1KG": "600107",
+      "Vitoria PARBO 5KG": "600111",
+      "Vitoria BRANCO 1KG": "600108",
+      "Vitoria BRANCO 5KG": "600112",
+      "Tia Dora Parbo 1KG": "600135",
+      "Tia Dora Parbo 5KG": "600136",
+      "Tia Nita Parbo 1KG": "600137",
+      "Tia Nita Parbo 5KG": "S/C",
+      "Da Roça": "600114",
+      "Chinês PARBO T1 1KG": "600051",
+      "BH Parbo T1 1KG": "202504",
+      "BH Parbo T1 5KG": "600141",
+      "Feirão Parbo T1 1KG": "600124",
+      "Feirão Parbo T1 5KG": "600139",
+      "Nardelli": "600119",
+      "Sepé PARBO 1KG": "600138",
+      "Enfadadeira 30X1 lisa": "600058",
+      "Enfadadeira 10X1 lisa": "600116",
+      "Enfadadeira Tio Alemão 10X1": "600120",
+      "Enfadadeira Amboni 10X1": "600121",
+      "Sacos 50KG": "2169",
+      "Sacos 50KG laminado": "600122",
+      "Saco Tio Alemão T2 25KG": "600102",
+      "Saco Amboni 25KG": "405758",
+      "Stretch": "600059",
+      "Realeza Parbo 1KG": "600125",
+      "Alteza Parbo 1KG": "600142",
+      "Enfadadeira 10x1 Tio Alemão Branco": "600126",
+      "Enfadadeira 5KG Tio Alemão Branco": "600127",
+      "Enfadadeira 5KG Tio Alemão Parbo": "600128",
+      "Fita Duma14 Tio Alemão Bco TP1 6x5": "600129",
+      "Fita Duma14 Tio Alemão Bco TP1 10x1": "600131",
+      "Fita Duma14 Tio Alemão Bco TP1 30x1": "600132",
+      "Fita Duma14 Tio Alemão Parbo TP1 6x5": "600133",
+      "Fita Duma14 Tio Alemão Parbo TP1 10x1": "600134",
+      "Fita Duma14 Tio Alemão Parbo TP1 30x1": "600130"
+    };
+
+    // Armazena as listas de pesos: { "NomeDaBobina": [peso1, peso2, ...] }
+    const lancamentos = {};
+
+    // Popula o datalist
+    const datalist = document.getElementById('listaBobinas');
+    Object.keys(catalogo).forEach(nome => {
+      const option = document.createElement('option');
+      option.value = nome;
+      datalist.appendChild(option);
+    });
+
+    // Eventos de teclado para navegação com Enter
+    const nomeInput = document.getElementById('bobinaInput');
+    const pesoInput = document.getElementById('pesoInput');
+
+    nomeInput.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (catalogo[nomeInput.value.trim()]) {
+          pesoInput.focus();
+        } else {
+          alert('Selecione uma bobina válida da lista!');
+        }
+      }
+    });
+
+    pesoInput.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        adicionarPeso();
+      }
+    });
+
+    function adicionarPeso() {
+      const nome = nomeInput.value.trim();
+      const peso = parseFloat(pesoInput.value);
+
+      if (!catalogo[nome]) {
+        alert('Selecione uma bobina válida da lista!');
+        nomeInput.focus();
+        return;
+      }
+      if (isNaN(peso) || peso <= 0) {
+        alert('Informe um peso válido!');
+        pesoInput.focus();
+        return;
+      }
+
+      if (!lancamentos[nome]) {
+        lancamentos[nome] = [];
+      }
+      lancamentos[nome].push(peso);
+
+      pesoInput.value = '';
+      nomeInput.value = '';
+      nomeInput.focus();
+
+      atualizarTabela();
+    }
+
+    function editarEtiqueta(nome, index) {
+      const pesoAtual = lancamentos[nome][index];
+      const novoPesoStr = prompt(`Editar peso da etiqueta #${index + 1} (${nome}):`, pesoAtual.toFixed(3));
+      
+      if (novoPesoStr !== null) {
+        const novoPeso = parseFloat(novoPesoStr);
+        if (!isNaN(novoPeso) && novoPeso > 0) {
+          lancamentos[nome][index] = novoPeso;
+          atualizarTabela();
+        } else {
+          alert('Peso inválido!');
+        }
+      }
+    }
+
+    function removerEtiqueta(nome, index) {
+      if (confirm(`Deseja remover a etiqueta #${index + 1} (${lancamentos[nome][index].toFixed(3)} kg)?`)) {
+        lancamentos[nome].splice(index, 1);
+        if (lancamentos[nome].length === 0) {
+          delete lancamentos[nome];
+        }
+        atualizarTabela();
+      }
+    }
+
+    function atualizarTabela() {
+      const tbody = document.getElementById('tabelaResumo');
+      tbody.innerHTML = '';
+
+      for (const [nome, pesos] of Object.entries(lancamentos)) {
+        if (pesos.length === 0) continue;
+
+        const pesoTotal = pesos.reduce((acc, curr) => acc + curr, 0);
+
+        // Monta a lista visual de etiquetas
+        let listaHtml = '<ul class="etiquetas-lista">';
+        pesos.forEach((p, idx) => {
+          listaHtml += `
+            <li>
+              <span>#${idx + 1}: <strong>${p.toFixed(3)} kg</strong></span>
+              <div class="actions">
+                <button class="btn-edit" onclick="editarEtiqueta('${nome}', ${idx})">✏️</button>
+                <button class="btn-delete" onclick="removerEtiqueta('${nome}', ${idx})">🗑️</button>
+              </div>
+            </li>
+          `;
+        });
+        listaHtml += '</ul>';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${catalogo[nome]}</strong></td>
+          <td>${nome}</td>
+          <td>${listaHtml}</td>
+          <td><strong>${pesoTotal.toFixed(3)} kg</strong></td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function limparTudo() {
+      if (confirm("Deseja zerar todas as somas?")) {
+        for (let key in lancamentos) delete lancamentos[key];
+        atualizarTabela();
+        nomeInput.focus();
+      }
+    }
+  </script>
+</body>
+</html>

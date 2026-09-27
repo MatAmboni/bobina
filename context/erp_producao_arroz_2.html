@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bobinas ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-tab.active { border-bottom: 3px solid #2563eb; color: #1d4ed8; font-weight: 700; }
+        .cad-tab.active { background-color: #2563eb; color: white; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600 text-white p-2 rounded-lg shadow">
+                        <i class="fas fa-boxes-stacked text-xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-black text-gray-900 tracking-tight">Bobinas<span class="text-blue-600">ERP</span></span>
+                        <span class="text-xs text-gray-500 block -mt-1">Controle de Produção & Embalagens</span>
+                    </div>
+                </div>
+                <nav class="flex space-x-1 sm:space-x-6">
+                    <button onclick="switchTab('registro')" id="tab-registro" class="nav-tab active py-4 px-2 sm:px-3 text-sm text-gray-600 hover:text-blue-600 focus:outline-none flex items-center gap-2 transition">
+                        <i class="fas fa-plus-circle text-blue-500"></i> <span class="hidden md:inline">Novo</span> Lançamento
+                    </button>
+                    <button onclick="switchTab('historico')" id="tab-historico" class="nav-tab py-4 px-2 sm:px-3 text-sm text-gray-600 hover:text-blue-600 focus:outline-none flex items-center gap-2 transition">
+                        <i class="fas fa-history text-indigo-500"></i> Histórico
+                    </button>
+                    <button onclick="switchTab('rendimento')" id="tab-rendimento" class="nav-tab py-4 px-2 sm:px-3 text-sm text-gray-600 hover:text-blue-600 focus:outline-none flex items-center gap-2 transition">
+                        <i class="fas fa-chart-pie text-emerald-500"></i> Rendimentos
+                    </button>
+                    <button onclick="switchTab('cadastros')" id="tab-cadastros" class="nav-tab py-4 px-2 sm:px-3 text-sm text-gray-600 hover:text-blue-600 focus:outline-none flex items-center gap-2 transition">
+                        <i class="fas fa-sliders text-amber-500"></i> Cadastros
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- TAB 1: LANÇAMENTO DE PRODUÇÃO -->
+        <section id="registro" class="tab-content active">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-4xl mx-auto">
+                <div class="flex items-center justify-between border-b pb-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Baixa de Produção de Arroz</h2>
+                        <p class="text-sm text-gray-500">Apontamento de uso de bobina de embalagem</p>
+                    </div>
+                    <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full border border-blue-200">
+                        <i class="fas fa-info-circle mr-1"></i> Formato Fardos / Pacotes
+                    </span>
+                </div>
+
+                <form id="form-producao" class="space-y-6">
+                    <input type="hidden" id="edit-id" value="">
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <!-- Select Bobina Cadastrada -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Bobina do Produto *</label>
+                            <select id="input-bobina" required onchange="aoSelecionarBobina()" class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">Selecione uma bobina...</option>
+                            </select>
+                            <p class="text-xs text-gray-400 mt-1">Cadastre novas bobinas na aba Cadastros</p>
+                        </div>
+
+                        <!-- Fornecedor Auto-Preenchido -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Fornecedor da Bobina</label>
+                            <input type="text" id="input-fornecedor-nome" readonly placeholder="Selecione a bobina acima" class="w-full border-gray-200 rounded-lg shadow-sm border p-2.5 bg-gray-100 text-gray-600 text-sm font-medium">
+                        </div>
+
+                        <!-- Tamanho Pacote -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tamanho da Embalagem *</label>
+                            <select id="input-tamanho" required class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="1kg">Pacotes de 1 kg</option>
+                                <option value="5kg">Pacotes de 5 kg</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <!-- Máquina -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Máquina Empacotadora *</label>
+                            <select id="input-maquina" required class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="1/2">Máquina 1/2</option>
+                                <option value="3/4">Máquina 3/4</option>
+                                <option value="5">Máquina 5</option>
+                            </select>
+                        </div>
+
+                        <!-- Operador Cadastrado -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Operador *</label>
+                            <select id="input-operador" required class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">Selecione um operador...</option>
+                            </select>
+                        </div>
+
+                        <!-- Data -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Data da Produção *</label>
+                            <input type="date" id="input-data" required class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Bloco de Pesagem e Quantidades -->
+                    <div class="bg-blue-50/70 border border-blue-100 p-5 rounded-xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Peso da Bobina (kg) *</label>
+                            <input type="number" step="0.001" min="0.001" id="input-peso-inicial" required placeholder="0.000" class="w-full border-gray-300 rounded-lg border p-2 bg-white text-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Pacotes Produzidos *</label>
+                            <input type="number" min="0" id="input-pacotes" required placeholder="0" class="w-full border-gray-300 rounded-lg border p-2 bg-white text-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Desperdício Plástico (kg) *</label>
+                            <input type="number" step="0.001" min="0" id="input-desperdicio" required placeholder="0.000" class="w-full border-gray-300 rounded-lg border p-2 bg-white text-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Sobra da Bobina (kg)</label>
+                            <input type="number" step="0.001" min="0" id="input-sobra" value="0" placeholder="0 (se zerou)" class="w-full border-gray-300 rounded-lg border p-2 bg-white text-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Observações -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Observações (Motivo de desperdício, defeitos da bobina, etc.)</label>
+                        <textarea id="input-obs" rows="2" placeholder="Ex: Bobina veio com emenda defeituosa de fábrica..." class="w-full border-gray-300 rounded-lg border p-2.5 text-sm focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2">
+                        <button type="button" id="btn-cancelar-edicao" onclick="cancelarEdicao()" class="hidden text-gray-500 hover:text-gray-700 text-sm font-medium px-4 py-2 border rounded-lg">
+                            Cancelar Edição
+                        </button>
+                        <div class="ml-auto flex gap-3">
+                            <button type="submit" id="btn-salvar" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition flex items-center gap-2">
+                                <i class="fas fa-check-circle"></i> <span id="lbl-btn-salvar">Salvar Produção</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 2: HISTÓRICO DE LANÇAMENTOS -->
+        <section id="historico" class="tab-content">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b pb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Histórico de Lançamentos</h2>
+                        <p class="text-sm text-gray-500">Consulte, edite ou remova baixas registradas</p>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <input type="text" id="filtro-historico" onkeyup="renderHistorico()" placeholder="Buscar por produto, fornecedor, operador..." class="border rounded-lg px-3 py-1.5 text-sm w-full sm:w-64">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50 font-semibold text-gray-600">
+                            <tr>
+                                <th class="px-3 py-3 text-left">Data</th>
+                                <th class="px-3 py-3 text-left">Bobina / Produto</th>
+                                <th class="px-3 py-3 text-left">Tam.</th>
+                                <th class="px-3 py-3 text-left">Fornecedor</th>
+                                <th class="px-3 py-3 text-left">Máq.</th>
+                                <th class="px-3 py-3 text-left">Operador</th>
+                                <th class="px-3 py-3 text-right">Peso (kg)</th>
+                                <th class="px-3 py-3 text-right">Pacotes</th>
+                                <th class="px-3 py-3 text-right">Desp. (kg)</th>
+                                <th class="px-3 py-3 text-right">Sobra (kg)</th>
+                                <th class="px-3 py-3 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-historico" class="divide-y divide-gray-200">
+                            <!-- Populado via JS -->
+                        </tbody>
+                    </table>
+                    <div id="vazio-historico" class="hidden text-center py-10 text-gray-400">
+                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                        <p>Nenhum lançamento registrado até o momento.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: RENDIMENTOS & INDICADORES -->
+        <section id="rendimento" class="tab-content">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Indicadores de Rendimento</h2>
+                <p class="text-sm text-gray-500">Análise de eficiência das bobinas por fornecedor e nível de desperdício dos operadores</p>
+            </div>
+
+            <!-- QUADRO 1: RENDIMENTO POR FORNECEDOR (SEPARADO 1KG E 5KG) -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                <div class="flex items-center justify-between border-b pb-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-emerald-100 text-emerald-700 rounded-lg">
+                            <i class="fas fa-award text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Rendimento de Embalagem por Fornecedor</h3>
+                            <p class="text-xs text-gray-500">Média de quantos pacotes de arroz são produzidos a cada 1kg de bobina do fornecedor</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- PACOTES DE 1KG -->
+                    <div class="border rounded-xl p-5 bg-gradient-to-br from-emerald-50/50 to-white">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-emerald-900 flex items-center gap-2">
+                                <span class="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded">1 KG</span>
+                                Pacotes de 1kg
+                            </h4>
+                            <span class="text-xs text-emerald-700 font-medium">Rendimento (Pacotes / 1kg Bobina)</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-gray-500 uppercase border-b bg-emerald-100/40">
+                                    <tr>
+                                        <th class="py-2 px-3">Fornecedor</th>
+                                        <th class="py-2 px-3 text-right">Total Pacotes</th>
+                                        <th class="py-2 px-3 text-right font-bold text-emerald-800">Rendimento</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-rendimento-1kg" class="divide-y divide-gray-100">
+                                    <!-- Populado via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PACOTES DE 5KG -->
+                    <div class="border rounded-xl p-5 bg-gradient-to-br from-blue-50/50 to-white">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-blue-900 flex items-center gap-2">
+                                <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">5 KG</span>
+                                Pacotes de 5kg
+                            </h4>
+                            <span class="text-xs text-blue-700 font-medium">Rendimento (Pacotes / 1kg Bobina)</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-gray-500 uppercase border-b bg-blue-100/40">
+                                    <tr>
+                                        <th class="py-2 px-3">Fornecedor</th>
+                                        <th class="py-2 px-3 text-right">Total Pacotes</th>
+                                        <th class="py-2 px-3 text-right font-bold text-blue-800">Rendimento</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-rendimento-5kg" class="divide-y divide-gray-100">
+                                    <!-- Populado via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUADRO 2: RENDIMENTO DO OPERADOR -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center gap-3 border-b pb-4 mb-6">
+                    <div class="p-2.5 bg-amber-100 text-amber-700 rounded-lg">
+                        <i class="fas fa-user-gear text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800">Desempenho por Operador</h3>
+                        <p class="text-xs text-gray-500">Análise de quem causa menor percentual de desperdício durante a produção</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+                        <thead class="bg-gray-50 font-semibold text-gray-600">
+                            <tr>
+                                <th class="py-3 px-4">Operador</th>
+                                <th class="py-3 px-4 text-right">Total Pacotes Prod.</th>
+                                <th class="py-3 px-4 text-right">Desperdício Total (kg)</th>
+                                <th class="py-3 px-4 text-right font-bold">% Taxa Desperdício</th>
+                                <th class="py-3 px-4 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-rendimento-operador" class="divide-y divide-gray-200">
+                            <!-- Populado via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: CADASTROS & GERENCIAMENTO -->
+        <section id="cadastros" class="tab-content">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="border-b pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Gerenciamento de Cadastros</h2>
+                        <p class="text-sm text-gray-500">Cadastre e mantenha a lista de Bobinas, Operadores e Fornecedores</p>
+                    </div>
+                    <!-- Abas Secundárias do Cadastro -->
+                    <div class="flex bg-gray-100 p-1 rounded-lg border">
+                        <button onclick="switchSubCad('bobinas')" id="subtab-bobinas" class="cad-tab active px-4 py-1.5 text-xs font-bold rounded-md transition">
+                            <i class="fas fa-box mr-1"></i> Bobinas
+                        </button>
+                        <button onclick="switchSubCad('operadores')" id="subtab-operadores" class="cad-tab px-4 py-1.5 text-xs font-bold rounded-md text-gray-600 transition">
+                            <i class="fas fa-users mr-1"></i> Operadores
+                        </button>
+                        <button onclick="switchSubCad('fornecedores')" id="subtab-fornecedores" class="cad-tab px-4 py-1.5 text-xs font-bold rounded-md text-gray-600 transition">
+                            <i class="fas fa-truck mr-1"></i> Fornecedores
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 1: BOBINAS -->
+                <div id="subcad-bobinas" class="subcad-content">
+                    <form id="form-cad-bobina" class="bg-gray-50 p-4 rounded-xl border mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nome da Bobina / Produto *</label>
+                            <input type="text" id="cad-bobina-nome" required placeholder="Ex: Bobina Arroz Tipo 1" class="w-full border rounded-lg p-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Fornecedor da Bobina *</label>
+                            <select id="cad-bobina-fornecedor" required class="w-full border rounded-lg p-2 text-sm bg-white">
+                                <option value="">Selecione o Fornecedor...</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold p-2 rounded-lg transition">
+                            <i class="fas fa-plus mr-1"></i> Cadastrar Bobina
+                        </button>
+                    </form>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 text-xs text-gray-600 uppercase">
+                                <tr>
+                                    <th class="p-3">Nome da Bobina</th>
+                                    <th class="p-3">Fornecedor Vinculado</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-cad-bobinas" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 2: OPERADORES -->
+                <div id="subcad-operadores" class="subcad-content hidden">
+                    <form id="form-cad-operador" class="bg-gray-50 p-4 rounded-xl border mb-6 flex gap-4 items-end">
+                        <div class="flex-grow">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nome do Operador *</label>
+                            <input type="text" id="cad-operador-nome" required placeholder="Ex: João da Silva" class="w-full border rounded-lg p-2 text-sm">
+                        </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-6 py-2 rounded-lg transition">
+                            <i class="fas fa-plus mr-1"></i> Cadastrar Operador
+                        </button>
+                    </form>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 text-xs text-gray-600 uppercase">
+                                <tr>
+                                    <th class="p-3">Nome do Operador</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-cad-operadores" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 3: FORNECEDORES -->
+                <div id="subcad-fornecedores" class="subcad-content hidden">
+                    <form id="form-cad-fornecedor" class="bg-gray-50 p-4 rounded-xl border mb-6 flex gap-4 items-end">
+                        <div class="flex-grow">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nome da Marca / Fornecedor *</label>
+                            <input type="text" id="cad-fornecedor-nome" required placeholder="Ex: Plásticos Indústria S/A" class="w-full border rounded-lg p-2 text-sm">
+                        </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-6 py-2 rounded-lg transition">
+                            <i class="fas fa-plus mr-1"></i> Cadastrar Fornecedor
+                        </button>
+                    </form>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 text-xs text-gray-600 uppercase">
+                                <tr>
+                                    <th class="p-3">Marca / Fornecedor</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-cad-fornecedores" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- App Logic -->
+    <script>
+        // CHAVES DO LOCALSTORAGE
+        const KEY_FORNECEDORES = 'bobinas_erp_fornecedores';
+        const KEY_OPERADORES = 'bobinas_erp_operadores';
+        const KEY_BOBINAS = 'bobinas_erp_bobinas';
+        const KEY_LANÇAMENTOS = 'bobinas_erp_lancamentos';
+
+        // CARREGAR DADOS INICIAIS DE EXEMPLO SE ESTIVER VAZIO
+        function initData() {
+            if (!localStorage.getItem(KEY_FORNECEDORES)) {
+                const fornecedoresIniciais = [
+                    { id: 'f1', nome: 'Plásticos Indústria' },
+                    { id: 'f2', nome: 'Embalagens Sul' }
+                ];
+                localStorage.setItem(KEY_FORNECEDORES, JSON.stringify(fornecedoresIniciais));
+            }
+            if (!localStorage.getItem(KEY_OPERADORES)) {
+                const operadoresIniciais = [
+                    { id: 'o1', nome: 'Carlos Silva' },
+                    { id: 'o2', nome: 'Ana Oliveira' }
+                ];
+                localStorage.setItem(KEY_OPERADORES, JSON.stringify(operadoresIniciais));
+            }
+            if (!localStorage.getItem(KEY_BOBINAS)) {
+                const bobinasIniciais = [
+                    { id: 'b1', nome: 'Bobina Arroz Agulhinha 5kg', fornecedorId: 'f1' },
+                    { id: 'b2', nome: 'Bobina Arroz Parboilizado 1kg', fornecedorId: 'f2' }
+                ];
+                localStorage.setItem(KEY_BOBINAS, JSON.stringify(bobinasIniciais));
+            }
+            if (!localStorage.getItem(KEY_LANÇAMENTOS)) {
+                const hoje = new Date().toISOString().split('T')[0];
+                const lancamentosIniciais = [
+                    {
+                        id: 'l1',
+                        bobinaId: 'b1',
+                        fornecedorId: 'f1',
+                        fornecedorNome: 'Plásticos Indústria',
+                        bobinaNome: 'Bobina Arroz Agulhinha 5kg',
+                        tamanho: '5kg',
+                        maquina: '1/2',
+                        operador: 'Carlos Silva',
+                        data: hoje,
+                        peso_inicial: 45.0,
+                        pacotes: 2800,
+                        desperdicio: 0.8,
+                        sobra: 2.0,
+                        obs: 'Produção normal de lote'
+                    },
+                    {
+                        id: 'l2',
+                        bobinaId: 'b2',
+                        fornecedorId: 'f2',
+                        fornecedorNome: 'Embalagens Sul',
+                        bobinaNome: 'Bobina Arroz Parboilizado 1kg',
+                        tamanho: '1kg',
+                        maquina: '3/4',
+                        operador: 'Ana Oliveira',
+                        data: hoje,
+                        peso_inicial: 30.0,
+                        pacotes: 5800,
+                        desperdicio: 0.3,
+                        sobra: 0.0,
+                        obs: ''
+                    }
+                ];
+                localStorage.setItem(KEY_LANÇAMENTOS, JSON.stringify(lancamentosIniciais));
+            }
+        }
+
+        // AUXILIARES
+        function getStorage(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
+        function setStorage(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+        function formatNum(n, decimals = 2) { return (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }); }
+        function formatDate(d) { if(!d) return ''; const [y, m, day] = d.split('-'); return `${day}/${m}/${y}`; }
+
+        // TROCA DE ABAS PRINCIPAIS
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            if (tabId === 'registro') popularDropdownsRegistro();
+            if (tabId === 'historico') renderHistorico();
+            if (tabId === 'rendimento') renderRendimentos();
+            if (tabId === 'cadastros') renderCadastros();
+        }
+
+        // TROCA DE SUB-ABAS DE CADASTRO
+        function switchSubCad(subId) {
+            document.querySelectorAll('.subcad-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.cad-tab').forEach(el => {
+                el.classList.remove('active', 'bg-blue-600', 'text-white');
+                el.classList.add('text-gray-600');
+            });
+
+            document.getElementById('subcad-' + subId).classList.remove('hidden');
+            const btn = document.getElementById('subtab-' + subId);
+            btn.classList.add('active', 'bg-blue-600', 'text-white');
+            btn.classList.remove('text-gray-600');
+        }
+
+        // POPULAR DROPDOWNS DO FORMULÁRIO
+        function popularDropdownsRegistro() {
+            const bobinas = getStorage(KEY_BOBINAS);
+            const fornecedores = getStorage(KEY_FORNECEDORES);
+            const operadores = getStorage(KEY_OPERADORES);
+
+            const selBobina = document.getElementById('input-bobina');
+            const selOperador = document.getElementById('input-operador');
+
+            const valBobina = selBobina.value;
+            const valOperador = selOperador.value;
+
+            selBobina.innerHTML = '<option value="">Selecione uma bobina...</option>';
+            bobinas.forEach(b => {
+                const f = fornecedores.find(item => item.id === b.fornecedorId);
+                const fNome = f ? f.nome : 'Sem fornecedor';
+                selBobina.innerHTML += `<option value="${b.id}" data-fornecedor-id="${b.fornecedorId}" data-fornecedor-nome="${fNome}">${b.nome} (${fNome})</option>`;
+            });
+            if(valBobina) selBobina.value = valBobina;
+
+            selOperador.innerHTML = '<option value="">Selecione um operador...</option>';
+            operadores.forEach(o => {
+                selOperador.innerHTML += `<option value="${o.nome}">${o.nome}</option>`;
+            });
+            if(valOperador) selOperador.value = valOperador;
+        }
+
+        function aoSelecionarBobina() {
+            const sel = document.getElementById('input-bobina');
+            const selectedOpt = sel.options[sel.selectedIndex];
+            const fNome = selectedOpt ? selectedOpt.getAttribute('data-fornecedor-nome') : '';
+            document.getElementById('input-fornecedor-nome').value = fNome || '';
+        }
+
+        // SUBMIT FORMULÁRIO DE PRODUÇÃO
+        document.getElementById('form-producao').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('edit-id').value;
+            const bobinaId = document.getElementById('input-bobina').value;
+            const bobinas = getStorage(KEY_BOBINAS);
+            const fornecedores = getStorage(KEY_FORNECEDORES);
+
+            const bobinaObj = bobinas.find(b => b.id === bobinaId);
+            const fornecedorObj = bobinaObj ? fornecedores.find(f => f.id === bobinaObj.fornecedorId) : null;
+
+            const lancamento = {
+                id: editId || Date.now().toString(),
+                bobinaId: bobinaId,
+                bobinaNome: bobinaObj ? bobinaObj.nome : 'Bobina Removida',
+                fornecedorId: fornecedorObj ? fornecedorObj.id : '',
+                fornecedorNome: fornecedorObj ? fornecedorObj.nome : 'N/A',
+                tamanho: document.getElementById('input-tamanho').value,
+                maquina: document.getElementById('input-maquina').value,
+                operador: document.getElementById('input-operador').value,
+                data: document.getElementById('input-data').value,
+                peso_inicial: parseFloat(document.getElementById('input-peso-inicial').value),
+                pacotes: parseInt(document.getElementById('input-pacotes').value, 10),
+                desperdicio: parseFloat(document.getElementById('input-desperdicio').value),
+                sobra: parseFloat(document.getElementById('input-sobra').value) || 0,
+                obs: document.getElementById('input-obs').value.trim()
+            };
+
+            let lancamentos = getStorage(KEY_LANÇAMENTOS);
+
+            if (editId) {
+                // Atualização
+                const idx = lancamentos.findIndex(l => l.id === editId);
+                if (idx !== -1) lancamentos[idx] = lancamento;
+                alert('Lançamento atualizado com sucesso!');
+            } else {
+                // Novo Lançamento
+                lancamentos.push(lancamento);
+                alert('Produção registrada com sucesso!');
+            }
+
+            setStorage(KEY_LANÇAMENTOS, lancamentos);
+            cancelarEdicao();
+        });
+
+        // CARREGAR REGISTRO PARA EDIÇÃO
+        function editarLancamento(id) {
+            const lancamentos = getStorage(KEY_LANÇAMENTOS);
+            const l = lancamentos.find(item => item.id === id);
+            if (!l) return;
+
+            switchTab('registro');
+            
+            document.getElementById('edit-id').value = l.id;
+            document.getElementById('input-bobina').value = l.bobinaId;
+            aoSelecionarBobina();
+            document.getElementById('input-tamanho').value = l.tamanho;
+            document.getElementById('input-maquina').value = l.maquina;
+            document.getElementById('input-operador').value = l.operador;
+            document.getElementById('input-data').value = l.data;
+            document.getElementById('input-peso-inicial').value = l.peso_inicial;
+            document.getElementById('input-pacotes').value = l.pacotes;
+            document.getElementById('input-desperdicio').value = l.desperdicio;
+            document.getElementById('input-sobra').value = l.sobra;
+            document.getElementById('input-obs').value = l.obs || '';
+
+            document.getElementById('lbl-btn-salvar').innerText = 'Atualizar Lançamento';
+            document.getElementById('btn-cancelar-edicao').classList.remove('hidden');
+        }
+
+        function cancelarEdicao() {
+            document.getElementById('form-producao').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('input-fornecedor-nome').value = '';
+            document.getElementById('input-data').valueAsDate = new Date();
+            document.getElementById('input-sobra').value = '0';
+            document.getElementById('lbl-btn-salvar').innerText = 'Salvar Produção';
+            document.getElementById('btn-cancelar-edicao').classList.add('hidden');
+        }
+
+        function excluirLancamento(id) {
+            if (confirm('Tem certeza que deseja apagar este registro do histórico?')) {
+                let lancamentos = getStorage(KEY_LANÇAMENTOS);
+                lancamentos = lancamentos.filter(l => l.id !== id);
+                setStorage(KEY_LANÇAMENTOS, lancamentos);
+                renderHistorico();
+            }
+        }
+
+        // RENDER HISTÓRICO
+        function renderHistorico() {
+            const lancamentos = getStorage(KEY_LANÇAMENTOS);
+            const filtro = document.getElementById('filtro-historico').value.toLowerCase();
+            const tbody = document.getElementById('tbody-historico');
+            const vazio = document.getElementById('vazio-historico');
+
+            tbody.innerHTML = '';
+
+            const filtrados = lancamentos.filter(l => {
+                return (l.bobinaNome || '').toLowerCase().includes(filtro) ||
+                       (l.fornecedorNome || '').toLowerCase().includes(filtro) ||
+                       (l.operador || '').toLowerCase().includes(filtro) ||
+                       (l.maquina || '').toLowerCase().includes(filtro);
+            }).reverse();
+
+            if (filtrados.length === 0) {
+                vazio.classList.remove('hidden');
+            } else {
+                vazio.classList.add('hidden');
+                filtrados.forEach(l => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50 transition';
+                    tr.innerHTML = `
+                        <td class="px-3 py-3 font-medium whitespace-nowrap">${formatDate(l.data)}</td>
+                        <td class="px-3 py-3 font-semibold text-gray-800">${l.bobinaNome}</td>
+                        <td class="px-3 py-3"><span class="bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded font-bold">${l.tamanho}</span></td>
+                        <td class="px-3 py-3 text-gray-600">${l.fornecedorNome}</td>
+                        <td class="px-3 py-3">${l.maquina}</td>
+                        <td class="px-3 py-3 text-gray-700">${l.operador}</td>
+                        <td class="px-3 py-3 text-right font-medium text-blue-700">${formatNum(l.peso_inicial)}</td>
+                        <td class="px-3 py-3 text-right font-bold text-gray-900">${l.pacotes}</td>
+                        <td class="px-3 py-3 text-right text-red-600">${formatNum(l.desperdicio)}</td>
+                        <td class="px-3 py-3 text-right text-amber-600">${formatNum(l.sobra)}</td>
+                        <td class="px-3 py-3 text-center space-x-2">
+                            <button onclick="editarLancamento('${l.id}')" title="Editar" class="text-blue-600 hover:text-blue-800 font-semibold p-1">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="excluirLancamento('${l.id}')" title="Excluir" class="text-red-500 hover:text-red-700 font-semibold p-1">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        // RENDER RENDIMENTOS (PACOTES POR 1KG DE BOBINA POR FORNECEDOR - SEPARADO 1KG E 5KG)
+        function renderRendimentos() {
+            const lancamentos = getStorage(KEY_LANÇAMENTOS);
+
+            const rend1kg = {};
+            const rend5kg = {};
+
+            lancamentos.forEach(l => {
+                const pesoBobinaUsado = l.peso_inicial - l.sobra;
+                if (pesoBobinaUsado <= 0) return;
+
+                const fornecedor = l.fornecedorNome || 'N/A';
+                const mapa = (l.tamanho === '1kg') ? rend1kg : rend5kg;
+
+                if (!mapa[fornecedor]) {
+                    mapa[fornecedor] = { totalPacotes: 0, totalPesoUtilizado: 0 };
+                }
+
+                mapa[fornecedor].totalPacotes += l.pacotes;
+                mapa[fornecedor].totalPesoUtilizado += pesoBobinaUsado;
+            });
+
+            // Tabela 1kg
+            const tbody1kg = document.getElementById('tbody-rendimento-1kg');
+            tbody1kg.innerHTML = '';
+            if (Object.keys(rend1kg).length === 0) {
+                tbody1kg.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-400">Nenhum registro para pacotes de 1kg</td></tr>';
+            } else {
+                Object.keys(rend1kg).forEach(forn => {
+                    const data = rend1kg[forn];
+                    const rendimento = data.totalPacotes / data.totalPesoUtilizado;
+                    tbody1kg.innerHTML += `
+                        <tr class="hover:bg-emerald-50/50">
+                            <td class="py-2.5 px-3 font-semibold text-gray-800">${forn}</td>
+                            <td class="py-2.5 px-3 text-right font-medium">${data.totalPacotes.toLocaleString('pt-BR')} un</td>
+                            <td class="py-2.5 px-3 text-right font-black text-emerald-700 text-base">${formatNum(rendimento, 1)} <span class="text-xs font-normal text-gray-500">pacotes/kg</span></td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Tabela 5kg
+            const tbody5kg = document.getElementById('tbody-rendimento-5kg');
+            tbody5kg.innerHTML = '';
+            if (Object.keys(rend5kg).length === 0) {
+                tbody5kg.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-400">Nenhum registro para pacotes de 5kg</td></tr>';
+            } else {
+                Object.keys(rend5kg).forEach(forn => {
+                    const data = rend5kg[forn];
+                    const rendimento = data.totalPacotes / data.totalPesoUtilizado;
+                    tbody5kg.innerHTML += `
+                        <tr class="hover:bg-blue-50/50">
+                            <td class="py-2.5 px-3 font-semibold text-gray-800">${forn}</td>
+                            <td class="py-2.5 px-3 text-right font-medium">${data.totalPacotes.toLocaleString('pt-BR')} un</td>
+                            <td class="py-2.5 px-3 text-right font-black text-blue-700 text-base">${formatNum(rendimento, 1)} <span class="text-xs font-normal text-gray-500">pacotes/kg</span></td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Rendimento / Desperdício por Operador
+            const opData = {};
+            lancamentos.forEach(l => {
+                const op = l.operador || 'Desconhecido';
+                const pesoUtilizado = l.peso_inicial - l.sobra;
+                if (!opData[op]) {
+                    opData[op] = { pacotes: 0, desperdicioKg: 0, pesoUtilizado: 0 };
+                }
+                opData[op].pacotes += l.pacotes;
+                opData[op].desperdicioKg += l.desperdicio;
+                opData[op].pesoUtilizado += pesoUtilizado;
+            });
+
+            const tbodyOp = document.getElementById('tbody-rendimento-operador');
+            tbodyOp.innerHTML = '';
+
+            const opLista = Object.keys(opData).map(op => {
+                const d = opData[op];
+                const taxaDesp = d.pesoUtilizado > 0 ? (d.desperdicioKg / d.pesoUtilizado) * 100 : 0;
+                return { nome: op, pacotes: d.pacotes, desperdicioKg: d.desperdicioKg, taxa: taxaDesp };
+            }).sort((a, b) => a.taxa - b.taxa);
+
+            if (opLista.length === 0) {
+                tbodyOp.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-400">Nenhum dado de operador registrado</td></tr>';
+            } else {
+                opLista.forEach(o => {
+                    let badge = '<span class="bg-green-100 text-green-800 text-xs px-2.5 py-1 rounded-full font-bold"><i class="fas fa-thumbs-up mr-1"></i> Excelente</span>';
+                    if (o.taxa > 2.0 && o.taxa <= 4.0) {
+                        badge = '<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold"><i class="fas fa-exclamation-triangle mr-1"></i> Atenção</span>';
+                    } else if (o.taxa > 4.0) {
+                        badge = '<span class="bg-red-100 text-red-800 text-xs px-2.5 py-1 rounded-full font-bold"><i class="fas fa-triangle-exclamation mr-1"></i> Alto Desperdício</span>';
+                    }
+
+                    tbodyOp.innerHTML += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-3 px-4 font-bold text-gray-800">${o.nome}</td>
+                            <td class="py-3 px-4 text-right">${o.pacotes.toLocaleString('pt-BR')} un</td>
+                            <td class="py-3 px-4 text-right text-red-600 font-semibold">${formatNum(o.desperdicioKg)} kg</td>
+                            <td class="py-3 px-4 text-right font-black text-gray-900">${formatNum(o.taxa)}%</td>
+                            <td class="py-3 px-4 text-center">${badge}</td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        // CADASTROS (BOBINAS, OPERADORES, FORNECEDORES)
+        function renderCadastros() {
+            renderCadBobinas();
+            renderCadOperadores();
+            renderCadFornecedores();
+        }
+
+        function renderCadBobinas() {
+            const bobinas = getStorage(KEY_BOBINAS);
+            const fornecedores = getStorage(KEY_FORNECEDORES);
+            const selForn = document.getElementById('cad-bobina-fornecedor');
+            const tbody = document.getElementById('tbody-cad-bobinas');
+
+            selForn.innerHTML = '<option value="">Selecione o Fornecedor...</option>';
+            fornecedores.forEach(f => {
+                selForn.innerHTML += `<option value="${f.id}">${f.nome}</option>`;
+            });
+
+            tbody.innerHTML = '';
+            bobinas.forEach(b => {
+                const f = fornecedores.find(item => item.id === b.fornecedorId);
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 font-semibold text-gray-800">${b.nome}</td>
+                        <td class="p-3 text-gray-600">${f ? f.nome : 'Sem fornecedor'}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="excluirCadItem('${KEY_BOBINAS}', '${b.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 px-2 py-1 rounded">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderCadOperadores() {
+            const operadores = getStorage(KEY_OPERADORES);
+            const tbody = document.getElementById('tbody-cad-operadores');
+            tbody.innerHTML = '';
+            operadores.forEach(o => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 font-semibold text-gray-800">${o.nome}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="excluirCadItem('${KEY_OPERADORES}', '${o.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 px-2 py-1 rounded">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderCadFornecedores() {
+            const fornecedores = getStorage(KEY_FORNECEDORES);
+            const tbody = document.getElementById('tbody-cad-fornecedores');
+            tbody.innerHTML = '';
+            fornecedores.forEach(f => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 font-semibold text-gray-800">${f.nome}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="excluirCadItem('${KEY_FORNECEDORES}', '${f.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 px-2 py-1 rounded">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // SUBMITS DOS FORMULÁRIOS DE CADASTRO
+        document.getElementById('form-cad-bobina').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nome = document.getElementById('cad-bobina-nome').value.trim();
+            const fornecedorId = document.getElementById('cad-bobina-fornecedor').value;
+            const bobinas = getStorage(KEY_BOBINAS);
+
+            bobinas.push({ id: Date.now().toString(), nome, fornecedorId });
+            setStorage(KEY_BOBINAS, bobinas);
+            document.getElementById('cad-bobina-nome').value = '';
+            renderCadBobinas();
+            popularDropdownsRegistro();
+        });
+
+        document.getElementById('form-cad-operador').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nome = document.getElementById('cad-operador-nome').value.trim();
+            const operadores = getStorage(KEY_OPERADORES);
+
+            operadores.push({ id: Date.now().toString(), nome });
+            setStorage(KEY_OPERADORES, operadores);
+            document.getElementById('cad-operador-nome').value = '';
+            renderCadOperadores();
+            popularDropdownsRegistro();
+        });
+
+        document.getElementById('form-cad-fornecedor').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nome = document.getElementById('cad-fornecedor-nome').value.trim();
+            const fornecedores = getStorage(KEY_FORNECEDORES);
+
+            fornecedores.push({ id: Date.now().toString(), nome });
+            setStorage(KEY_FORNECEDORES, fornecedores);
+            document.getElementById('cad-fornecedor-nome').value = '';
+            renderCadFornecedores();
+            renderCadBobinas();
+            popularDropdownsRegistro();
+        });
+
+        function excluirCadItem(key, id) {
+            if (confirm('Deseja excluir este cadastro?')) {
+                let items = getStorage(key);
+                items = items.filter(i => i.id !== id);
+                setStorage(key, items);
+                renderCadastros();
+                popularDropdownsRegistro();
+            }
+        }
+
+        // INICIALIZAÇÃO
+        window.addEventListener('DOMContentLoaded', () => {
+            initData();
+            document.getElementById('input-data').valueAsDate = new Date();
+            popularDropdownsRegistro();
+        });
+    </script>
+</body>
+</html>
