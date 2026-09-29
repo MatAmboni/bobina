@@ -1,0 +1,20 @@
+import { CalendarClock, Plus, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+
+export type LoadingOrder = { id: string; previsao: string; pedido: string; produto: string; fardos: number; status: 'aguardando' | 'separado' }
+type ProductOption = { id: string; nome: string; codigo?: string }
+type Props = { orders: LoadingOrder[]; setOrders: (value: LoadingOrder[]) => void; notify: (message: string) => void; produtos: ProductOption[] }
+const dateFmt = (value: string) => value ? value.split('-').reverse().join('/') : '-'
+
+export default function LoadingOrdersPanel({ orders, setOrders, notify, produtos }: Props) {
+  const [form, setForm] = useState({ previsao: new Date().toISOString().slice(0, 10), pedido: '', produto: '', fardos: '' })
+  const pending = orders.filter(order => order.status === 'aguardando').sort((a, b) => a.previsao.localeCompare(b.previsao))
+  const update = (key: keyof typeof form, value: string) => setForm({ ...form, [key]: value })
+  const add = () => { if (!form.previsao || !form.produto || !form.fardos) return notify('Informe previsão, produto e quantidade de fardos.'); setOrders([...orders, { id: crypto.randomUUID(), ...form, fardos: Number(form.fardos), status: 'aguardando' }]); setForm({ ...form, pedido: '', produto: '', fardos: '' }); notify('Pedido de carregamento incluído.') }
+  const markSeparated = (id: string) => { setOrders(orders.map(order => order.id === id ? { ...order, status: 'separado' } : order)); notify('Pedido marcado como separado.') }
+  return <>
+    <section className="surface orders-intro"><div><span className="eyebrow">PROGRAMAÇÃO DE SAÍDAS</span><h2>Pedidos para os próximos carregamentos</h2><p>Organize o que precisa ser separado e deixe a expedição pronta para o dia.</p></div><div className="orders-counter"><strong>{pending.length}</strong><span>pedidos aguardando</span></div></section>
+    <section className="surface loading-form"><div className="section-heading"><div><span className="eyebrow">NOVO PEDIDO</span><h3>Adicionar à fila de carregamento</h3></div><CalendarClock className="section-icon" size={23} /></div><div className="form-grid order-fields"><label className="field-label">Data prevista *<input type="date" value={form.previsao} onChange={event => update('previsao', event.target.value)} /></label><label className="field-label">Pedido<input value={form.pedido} onChange={event => update('pedido', event.target.value)} placeholder="Ex: PED-1048" /></label><label className="field-label">Produto *<select value={form.produto} onChange={event => update('produto', event.target.value)}><option value="">Selecione um produto</option>{produtos.map(product => <option key={product.id} value={product.nome}>{product.codigo ? `${product.codigo} · ` : ''}{product.nome}</option>)}</select></label><label className="field-label">Fardos *<input type="number" min="0" value={form.fardos} onChange={event => update('fardos', event.target.value)} placeholder="0" /></label><button className="primary-button" onClick={add}><Plus size={17} />Adicionar pedido</button></div></section>
+    <section className="surface table-surface"><div className="section-heading"><div><span className="eyebrow">FILA DE EXPEDIÇÃO</span><h3>{pending.length} próximo(s) carregamento(s)</h3></div></div><div className="table-wrap"><table><thead><tr><th>Previsão</th><th>Pedido</th><th>Produto</th><th>Fardos</th><th>Ação</th></tr></thead><tbody>{pending.map(order => <tr key={order.id}><td>{dateFmt(order.previsao)}</td><td><strong>{order.pedido || 'Sem número'}</strong></td><td>{order.produto}</td><td>{order.fardos.toLocaleString('pt-BR')}</td><td className="table-actions"><button className="small-action" onClick={() => markSeparated(order.id)}>Separado</button><button className="table-icon" title="Remover pedido" onClick={() => setOrders(orders.filter(item => item.id !== order.id))}><Trash2 size={15} /></button></td></tr>)}</tbody></table>{pending.length === 0 && <div className="empty"><CalendarClock size={22} /><span>Nenhum pedido aguardando carregamento.</span></div>}</div></section>
+  </>
+}

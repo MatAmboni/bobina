@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ArrowDownUp, Boxes, Calculator, ClipboardCheck, ClipboardList, Database, Download, Factory, PackageSearch, Plus, Trash2, TrendingUp, Truck, Users, X } from 'lucide-react'
+import { Archive, Boxes, Calculator, CalendarClock, ClipboardCheck, ClipboardList, Database, Download, Factory, PackageSearch, Plus, Trash2, TrendingUp, Truck, Users, X } from 'lucide-react'
+import BaleStockPanel, { BaleStockItem } from './BaleStockPanel'
 import StockPanel from './StockPanel'
 import { EnhancedHistory, EnhancedProduction, EnhancedRegisters } from './ProductionExtras'
+import DailyProduction, { ProducaoDiaria } from './DailyProduction'
 import ReceivingPanel, { Recebimento } from './ReceivingPanel'
 import QualityPanel, { QualityChecklist } from './QualityPanel'
+import LoadingPanel, { LoadingRecord } from './LoadingPanel'
+import LoadingOrdersPanel, { LoadingOrder } from './LoadingOrdersPanel'
 import './styles.css'
 
-type Tab = 'inicio' | 'bobinas' | 'recebimento' | 'estoque' | 'producao' | 'qualidade' | 'movimentos' | 'historico' | 'cadastros'
+type Tab = 'inicio' | 'bobinas' | 'recebimento' | 'estoque' | 'producao' | 'producaoDiaria' | 'qualidade' | 'estoqueFardos' | 'carregamentos' | 'pedidosCarregamento' | 'cadastros'
 type Bobina = { id: string; nome: string; codigo: string; fornecedor: string; pacotesPorFardo?: number }
 type Etiqueta = { id: string; bobinaId: string; peso: number }
 type Producao = { id: string; data: string; bobinaId: string; operador: string; maquina: string; tamanho: string; peso: number; pacotes: number; desperdicio: number; sobra: number; obs: string }
@@ -52,12 +56,16 @@ function App() {
   const [bobinas, setBobinas] = usePersist<Bobina[]>('erp-bobinas', catalogo)
   const [etiquetas, setEtiquetas] = usePersist<Etiqueta[]>('erp-etiquetas', [])
   const [producoes, setProducoes] = usePersist<Producao[]>('erp-producoes', initialProduction)
+  const [producoesDiarias, setProducoesDiarias] = usePersist<ProducaoDiaria[]>('erp-producoes-diarias', [])
   const [estoque, setEstoque] = usePersist<Estoque[]>('erp-estoque', initialStock)
   const [armazenamentos, setArmazenamentos] = usePersist<Armazenamento[]>('erp-armazenamentos', initialStorage)
   const [movimentos, setMovimentos] = usePersist<Movimento[]>('erp-movimentos', [])
   const [programacoes, setProgramacoes] = usePersist<Programacao[]>('erp-programacoes', [])
   const [recebimentos, setRecebimentos] = usePersist<Recebimento[]>('erp-recebimentos', [])
   const [checklists, setChecklists] = usePersist<QualityChecklist[]>('erp-checklists-qualidade', [])
+  const [estoqueFardos, setEstoqueFardos] = usePersist<BaleStockItem[]>('erp-estoque-fardos', [])
+  const [carregamentos, setCarregamentos] = usePersist<LoadingRecord[]>('erp-carregamentos', [])
+  const [pedidosCarregamento, setPedidosCarregamento] = usePersist<LoadingOrder[]>('erp-pedidos-carregamento', [])
   const [toast, setToast] = useState('')
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2600) }
   const nav = (next: Tab) => setTab(next)
@@ -65,17 +73,20 @@ function App() {
   return <div className="app-shell">
     <aside className="sidebar">
       <div className="brand"><span className="brand-mark"><Boxes size={22} /></span><span><strong>Amboni Alimentos</strong><small>Erp de almoxarifado</small></span></div>
-      <nav className="nav-list">{([['inicio', 'Visão geral', Factory], ['bobinas', 'Calculadora', Calculator], ['recebimento', 'Receber bobinas', Truck], ['estoque', 'Estoque de bobinas', PackageSearch], ['producao', 'Consumo de bobinas', ClipboardList], ['qualidade', 'Qualidade da produção', ClipboardCheck], ['movimentos', 'Entradas e saídas', ArrowDownUp], ['cadastros', 'Cadastros', Database]] as const).map(([id, label, Icon]) => <button key={id} className={tab === id ? 'nav-item active' : 'nav-item'} onClick={() => nav(id)}><Icon size={18} />{label}</button>)}</nav>
+      <nav className="nav-list">{([['inicio', 'Visão geral', Factory], ['bobinas', 'Calculadora', Calculator], ['recebimento', 'Receber bobinas', Truck], ['estoque', 'Estoque de bobinas', PackageSearch], ['producao', 'Rendimento de embalagens', ClipboardList], ['producaoDiaria', 'Produção diária', ClipboardList], ['qualidade', 'Qualidade da produção', ClipboardCheck], ['estoqueFardos', 'Estoque de fardos', Archive], ['carregamentos', 'Carregamentos', Truck], ['pedidosCarregamento', 'Pedidos de carregamento', CalendarClock], ['cadastros', 'Cadastros', Database]] as const).map(([id, label, Icon]) => <button key={id} className={tab === id ? 'nav-item active' : 'nav-item'} onClick={() => nav(id)}><Icon size={18} />{label}</button>)}</nav>
       <div className="sidebar-foot"><strong>v1.0</strong></div>
     </aside>
-    <main className="content"><header className="topbar"><div><p className="eyebrow">CONTROLE OPERACIONAL / {tab.toUpperCase()}</p><h1>{({ inicio: 'Visão geral', bobinas: 'Calculadora de bobinas', recebimento: 'Recebimento e inspeção', estoque: 'Estoque de bobinas', producao: 'Consumo de bobinas', qualidade: 'Qualidade da produção', movimentos: 'Entradas, saídas e cargas', historico: 'Consumo de bobinas', cadastros: 'Cadastros mestres' } as Record<Tab, string>)[tab]}</h1></div></header>
-      {tab === 'inicio' && <Dashboard totals={totals} producoes={producoes} estoque={estoque} bobinas={bobinas} onNavigate={next => nav(next === 'historico' ? 'producao' : next)} />}
+    <main className="content"><header className="topbar"><div><p className="eyebrow">CONTROLE OPERACIONAL / {tab.toUpperCase()}</p><h1>{({ inicio: 'Visão geral', bobinas: 'Calculadora de bobinas', recebimento: 'Recebimento e inspeção', estoque: 'Estoque de bobinas', producao: 'Rendimento de embalagens', producaoDiaria: 'Produção diária', qualidade: 'Qualidade da produção', estoqueFardos: 'Estoque de fardos', carregamentos: 'Carregamentos do dia', pedidosCarregamento: 'Pedidos de carregamento', cadastros: 'Cadastros mestres' } as Record<Tab, string>)[tab]}</h1></div></header>
+      {tab === 'inicio' && <Dashboard totals={totals} producoes={producoes} estoque={estoque} bobinas={bobinas} onNavigate={next => nav(next)} />}
       {tab === 'bobinas' && <BobinaCalculator bobinas={bobinas} etiquetas={etiquetas} setEtiquetas={setEtiquetas} notify={notify} />}
       {tab === 'producao' && <><EnhancedProduction bobinas={bobinas} producoes={producoes} setProducoes={setProducoes} notify={notify} /><EnhancedHistory bobinas={bobinas} producoes={producoes} setProducoes={setProducoes} notify={notify} /></>}
+      {tab === 'producaoDiaria' && <DailyProduction bobinas={bobinas} producoes={producoesDiarias} setProducoes={setProducoesDiarias} notify={notify} />}
       {tab === 'estoque' && <StockPanel mode="contagem" bobinas={bobinas} estoque={estoque} setEstoque={setEstoque} armazenamentos={armazenamentos} movimentos={movimentos} setMovimentos={setMovimentos} programacoes={programacoes} setProgramacoes={setProgramacoes} notify={notify} />}
       {tab === 'recebimento' && <ReceivingPanel bobinas={bobinas} recebimentos={recebimentos} setRecebimentos={setRecebimentos} movimentos={movimentos} setMovimentos={setMovimentos} notify={notify} />}
       {tab === 'qualidade' && <QualityPanel checklists={checklists} setChecklists={setChecklists} notify={notify} />}
-      {tab === 'movimentos' && <StockPanel mode="movimentos" bobinas={bobinas} estoque={estoque} setEstoque={setEstoque} armazenamentos={armazenamentos} movimentos={movimentos} setMovimentos={setMovimentos} programacoes={programacoes} setProgramacoes={setProgramacoes} notify={notify} />}
+      {tab === 'estoqueFardos' && <BaleStockPanel items={estoqueFardos} setItems={setEstoqueFardos} notify={notify} produtos={bobinas} />}
+      {tab === 'carregamentos' && <LoadingPanel records={carregamentos} setRecords={setCarregamentos} notify={notify} produtos={bobinas} />}
+      {tab === 'pedidosCarregamento' && <LoadingOrdersPanel orders={pedidosCarregamento} setOrders={setPedidosCarregamento} notify={notify} produtos={bobinas} />}
       {tab === 'cadastros' && <EnhancedRegisters bobinas={bobinas} setBobinas={setBobinas} armazenamentos={armazenamentos} setArmazenamentos={setArmazenamentos} estoque={estoque} notify={notify} />}
     </main>{toast && <div className="toast">{toast}</div>}
   </div>
@@ -83,7 +94,7 @@ function App() {
 
 function Dashboard({ totals, producoes, estoque, bobinas, onNavigate }: { totals: { kg: number; pacotes: number; estoque: number }, producoes: Producao[], estoque: Estoque[], bobinas: Bobina[], onNavigate: (tab: Tab) => void }) {
   const today = producoes.filter(item => item.data === hoje); const waste = today.reduce((sum, item) => sum + item.desperdicio, 0); const latestStock = estoque.filter(item => item.data === hoje).length
-  return <><div className="metric-grid"><Metric label="Pacotes produzidos hoje" value={totals.pacotes.toLocaleString('pt-BR')} note={`${today.length} lançamentos`} accent="orange" /><Metric label="Desperdício apontado" value={`${fmt(waste)} kg`} note="no turno atual" accent="red" /><Metric label="Estoque contado hoje" value={`${fmt(totals.estoque)} kg`} note={`${latestStock} itens conferidos`} accent="teal" /></div><div className="split-grid"><section className="surface quick-panel"><div className="section-heading"><div><span className="eyebrow">ATALHOS</span><h3>Começar uma tarefa</h3></div></div><button className="action-row" onClick={() => onNavigate('bobinas')}><Calculator /><span><strong>Somar etiquetas de bobina</strong><small>Gere o resumo por código para dar baixa</small></span><Plus size={17} /></button><button className="action-row" onClick={() => onNavigate('producao')}><ClipboardList /><span><strong>Registrar produção</strong><small>Alimente a operação e replique na planilha</small></span><Plus size={17} /></button><button className="action-row" onClick={() => onNavigate('estoque')}><PackageSearch /><span><strong>Fazer contagem de estoque</strong><small>Abra uma nova fotografia do inventário</small></span><Plus size={17} /></button></section><section className="surface recent-panel"><div className="section-heading"><div><span className="eyebrow">ÚLTIMOS REGISTROS</span><h3>Produção recente</h3></div><button className="link-button" onClick={() => onNavigate('historico')}>Ver tudo</button></div>{producoes.slice(-4).reverse().map(item => <div className="recent-row" key={item.id}><div className="avatar">{item.operador.slice(0, 1)}</div><div><strong>{bobinas.find(b => b.id === item.bobinaId)?.nome || 'Bobina removida'}</strong><small>{item.operador} · {dateFmt(item.data)}</small></div><b>{item.pacotes.toLocaleString('pt-BR')} un.</b></div>)}</section></div></>
+  return <><div className="metric-grid"><Metric label="Pacotes produzidos hoje" value={totals.pacotes.toLocaleString('pt-BR')} note={`${today.length} lançamentos`} accent="orange" /><Metric label="Desperdício apontado" value={`${fmt(waste)} kg`} note="no turno atual" accent="red" /><Metric label="Estoque contado hoje" value={`${fmt(totals.estoque)} kg`} note={`${latestStock} itens conferidos`} accent="teal" /></div><div className="split-grid"><section className="surface quick-panel"><div className="section-heading"><div><span className="eyebrow">ATALHOS</span><h3>Começar uma tarefa</h3></div></div><button className="action-row" onClick={() => onNavigate('bobinas')}><Calculator /><span><strong>Somar etiquetas de bobina</strong><small>Gere o resumo por código para dar baixa</small></span><Plus size={17} /></button><button className="action-row" onClick={() => onNavigate('producao')}><ClipboardList /><span><strong>Registrar produção</strong><small>Alimente a operação e replique na planilha</small></span><Plus size={17} /></button><button className="action-row" onClick={() => onNavigate('estoque')}><PackageSearch /><span><strong>Fazer contagem de estoque</strong><small>Abra uma nova fotografia do inventário</small></span><Plus size={17} /></button></section><section className="surface recent-panel"><div className="section-heading"><div><span className="eyebrow">ÚLTIMOS REGISTROS</span><h3>Produção recente</h3></div><button className="link-button" onClick={() => onNavigate('producao')}>Ver tudo</button></div>{producoes.slice(-4).reverse().map(item => <div className="recent-row" key={item.id}><div className="avatar">{item.operador.slice(0, 1)}</div><div><strong>{bobinas.find(b => b.id === item.bobinaId)?.nome || 'Bobina removida'}</strong><small>{item.operador} · {dateFmt(item.data)}</small></div><b>{item.pacotes.toLocaleString('pt-BR')} un.</b></div>)}</section></div></>
 }
 function Metric({ label, value, note, accent }: { label: string; value: string; note: string; accent: string }) { return <div className={`metric ${accent}`}><span>{label}</span><strong>{value}</strong><small>{note}</small></div> }
 
